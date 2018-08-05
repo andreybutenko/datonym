@@ -1,27 +1,38 @@
 # plumber.R
 # https://www.rplumber.io/docs
 
-#' Echo the parameter that was sent in
-#' @param msg The message to echo back.
-#' @get /echo
-function(msg=""){
-  list(msg = paste0("The message is: '", msg, "'"))
+source('./analysis/exploration.R')
+
+# Emit an error with given status code and msg
+EmitError <- function(res, status, msg) {
+  res$status <- status
+  list(error = jsonlite::unbox(msg)) %>% 
+    return()
 }
 
-#' Plot out data from the iris dataset
-#' @param spec If provided, filter the data to only this species (e.g. 'setosa')
-#' @get /plot
-#' @png
-function(spec){
-  myData <- iris
-  title <- "All Species"
-  
-  # Filter if the species was specified
-  if (!missing(spec)){
-    title <- paste0("Only the '", spec, "' Species")
-    myData <- subset(iris, Species == spec)
+#' Return information on popularity of name over time.
+#' @param name The name
+#' @get /trend
+function(res, name) {
+  if(missing(name)) {
+    return(EmitError(res, 400, 'Requests to /trend must include ?name parameter'))
   }
   
-  plot(myData$Sepal.Length, myData$Petal.Length,
-       main=title, xlab="Sepal Length", ylab="Petal Length")
+  if(!NameExists(name)) {
+    return(EmitError(res, 404, paste0('No entries with name "', name, '" found')))
+  }
+  
+  trend.df <- GetNameTrend(name)
+  
+  list(
+    male = trend.df %>% 
+      filter(gender == 'M') %>% 
+      FixChronological(min.year = min(trend.df$year),
+                       max.year = max(trend.df$year)),
+    
+    female = trend.df %>% 
+      filter(gender == 'F') %>% 
+      FixChronological(min.year = min(trend.df$year),
+                       max.year = max(trend.df$year))
+  )
 }

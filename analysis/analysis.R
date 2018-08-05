@@ -2,7 +2,6 @@
 # This script performs operations over the dataset to create interesting,
 # insightful columns.
 
-library(dplyr)
 library(stringr)
 library(tidyr)
 
@@ -13,8 +12,8 @@ kTrendinessAge = 3 # years ago to split at
 
 # Load data ----
 
-names <- read.csv('../ssa_names/ssa_names.csv', stringsAsFactors = F)
-names.years <- read.csv('../ssa_names/ssa_names_years.csv', stringsAsFactors = F)
+names <- read.csv('./ssa_names/ssa_names.csv', stringsAsFactors = F)
+names.years <- read.csv('./ssa_names/ssa_names_years.csv', stringsAsFactors = F)
 
 # Helpers ----
 
