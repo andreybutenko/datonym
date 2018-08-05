@@ -198,6 +198,9 @@ names.analy$doubleness <- GetDoubleness(names.analy$name)
 # Percentiles ----
 # Create columns with percentile values of all numeric columns
 
+#' Get percentile scores for all values in a vector.
+#' 
+#' @param v Vector of numeric values.
 GetPercentileScores <- function(v) {
   ecdf(v)(v)
 }
