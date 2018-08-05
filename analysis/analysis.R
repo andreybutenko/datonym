@@ -12,7 +12,7 @@ kTrendinessAge = 3 # years ago to split at
 
 # Load data ----
 
-names <- read.csv('./ssa_names/ssa_names.csv', stringsAsFactors = F)
+names.analy <- read.csv('./ssa_names/ssa_names.csv', stringsAsFactors = F)
 names.years <- read.csv('./ssa_names/ssa_names_years.csv', stringsAsFactors = F)
 
 # Helpers ----
@@ -52,7 +52,7 @@ CountSyllables <- function(str) {
   nchar(gsub('[^X]', '', gsub('[aeiouy]+', 'X', tolower(str))))
 }
 
-names$syllables <- CountSyllables(names$name) %>%
+names.analy$syllables <- CountSyllables(names.analy$name) %>%
   pmax(1)
 
 # Symmetry ----
@@ -95,17 +95,24 @@ GetSymmetryScore <- function(x) {
   })
 }
 
-names$symmetry <- GetSymmetryScore(names$name)
+names.analy$symmetry <- GetSymmetryScore(names.analy$name)
 
 # Length ----
 
-names$length <- str_length(names$name)
+names.analy$length <- str_length(names.analy$name)
 
 # Vowels ----
 
-names$vowels <- IsVowel(strsplit(names$name, "")) %>% 
+names.analy$vowels <- IsVowel(strsplit(names.analy$name, "")) %>% 
   lapply(sum) %>% 
   unlist()
+
+names.analy$vowel.score <- names.analy$vowels / names.analy$length
+
+names.analy$ends.in.vowel <- substr(names.analy$name,
+                                    str_length(names.analy$name),
+                                    str_length(names.analy$name)) %>% 
+  IsVowel()
 
 # Trendiness ----
 # Trendiness is determined by the frequency of the name over the last
@@ -117,9 +124,9 @@ trendiness.cutoff <- names.years$year %>%
   as.numeric() %>% 
   .[length(.) + 1 - kTrendinessAge]
 
-names$trendiness.score <- SplitAtYear(names.years, trendiness.cutoff, 'trendiness.score') %>% 
+names.analy$trendiness.score <- SplitAtYear(names.years, trendiness.cutoff, 'trendiness.score') %>% 
   select(name, gender, trendiness.score) %>% 
-  left_join(select(names, -one_of('trendiness.score')), by = c('name', 'gender')) %>% 
+  left_join(select(names.analy, -one_of('trendiness.score')), by = c('name', 'gender')) %>% 
   pull(trendiness.score) * -1 # invert
 
 # Classic ----
@@ -127,33 +134,81 @@ names$trendiness.score <- SplitAtYear(names.years, trendiness.cutoff, 'trendines
 # before and after kClassicCutoff. Greater values were more popular
 # before compared to now.
 
-names$classic.score <- SplitAtYear(names.years, kClassicCutoff, 'classic.score') %>% 
+names.analy$classic.score <- SplitAtYear(names.years, kClassicCutoff, 'classic.score') %>% 
   select(name, gender, classic.score) %>% 
-  left_join(select(names, -one_of('classic.score')), by = c('name', 'gender')) %>% 
+  left_join(select(names.analy, -one_of('classic.score')), by = c('name', 'gender')) %>% 
   pull(classic.score)
+
+# Masculine/Feminine ----
+# Calculate masculinity and androgynity scores for names.
+
+#' Gets a masculinity score for names, where names that are more common in males
+#' are closer to 1 and names that are more common in women are closer to 1.
+#' 
+#' @param gender Gender of name ('M' or 'F')
+#' @param count Count of name for that gender
+#' @param total.count Total count of name across genders
+GetMasculinity <- function(gender, count, total.count) {
+  male.count <- ifelse(gender == 'M', count, total.count - count)
+  return(male.count / total.count)
+}
+
+#' Get a androgynity score for a name, where names that are common in both
+#' males and females are closer to 1, and other names are closer to 0.
+#' 
+#' @param masculinity Masculinity score, see \link{GetMasculinity}
+GetAndrogynity <- function(masculinity) {
+  (0.5 - abs(masculinity - 0.5)) * 2
+}
+
+names.analy <- names.analy %>% 
+  group_by(name) %>% 
+  summarize(total.count = sum(count)) %>% 
+  left_join(names.analy, by = 'name') %>% 
+  mutate(masculinity = GetMasculinity(gender, count, total.count),
+         androgynity = GetAndrogynity(masculinity)) %>% 
+  select(-total.count)
+
+# Double Letters ----
+# Determines whether names have double-letters (Nicollette, Alessandra)
+
+GetDoubleness <- function(x) {
+  sapply(x, function(str) {
+    str <- tolower(str)
+    
+    iterations <- str_length(str) - 1
+    
+    matches <- 0
+    
+    for(i in 1:iterations) {
+      curr.ch <- substr(str, i, i)
+      next.ch <- substr(str, i + 1, i + 1)
+      
+      if(curr.ch == next.ch) {
+        matches = matches + 1
+      }
+    }
+    
+    return(matches)
+  })
+}
+
+# Percentiles ----
+# Create columns with percentile values of all numeric columns
+
+GetPercentileScores <- function(v) {
+  ecdf(v)(v)
+}
+
+# names.analy <- names
+
+is.numeric.cols <- lapply(names.analy, is.numeric)
+numeric.cols <- names(is.numeric.cols)[unlist(is.numeric.cols)]
+
+for(col.name in numeric.cols) {
+  names.analy[[paste0(col.name, '.perc')]] <- GetPercentileScores(names.analy[[col.name]])
+}
 
 # Save ----
 
-write.csv(names, 'data/names3.csv', row.names = F)
-
-# Search by suffix ----
-
-GetNamesWithSuffix <- function(df, suffix) {
-  df %>%
-    filter(endsWith(
-      str_to_lower(name),
-      str_to_lower(suffix)
-    ))
-}
-
-
-# Searches ----
-names %>% 
-  filter(length > 2, count > 20) %>% 
-  group_by(name) %>% 
-  arrange(-symmetry, syllables, length, -vowels) %>% 
-  View()
-
-names %>% 
-  filter(length > 2) %>% 
-  arrange(-classic.score)
+write.csv(names.analy, 'data/names4.csv', row.names = F)
