@@ -193,14 +193,14 @@ GetDoubleness <- function(x) {
   })
 }
 
+names.analy$doubleness <- GetDoubleness(names.analy$name)
+
 # Percentiles ----
 # Create columns with percentile values of all numeric columns
 
 GetPercentileScores <- function(v) {
   ecdf(v)(v)
 }
-
-# names.analy <- names
 
 is.numeric.cols <- lapply(names.analy, is.numeric)
 numeric.cols <- names(is.numeric.cols)[unlist(is.numeric.cols)]
