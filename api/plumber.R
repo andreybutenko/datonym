@@ -1,7 +1,9 @@
 # plumber.R
 # https://www.rplumber.io/docs
 
-source('./analysis/exploration.R')
+source('./api/exploration/common.R')
+source('./api/exploration/find_names.R')
+source('./api/exploration/name_stats.R')
 
 # Emit an error with given status code and msg
 EmitError <- function(res, status, msg) {
