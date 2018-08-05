@@ -86,9 +86,13 @@ GetPage <- function(df, n = 20, page = 1) {
     tail(n)
 }
 
-FixDuplicates <- function(df, n = 20, page = 1) {
-  return(df)
-  
+#' Merge rows that are gendered duplicates (i.e. combine Riley male and Riley female).
+#' Rows keep value of higher-scoring row of duplicate pair, except count which is summed.
+#' 
+#' @param df The dataframe.
+#' @param n Number of results to be displayed.
+#' @param page Page of results to be displayed.
+MergeGenderedDuplicates <- function(df, n = 20, page = 1) {
   need.to.fix <- df %>% 
     GetPage(n, page) %>% 
     pull(name) %>% 
@@ -104,21 +108,41 @@ FixDuplicates <- function(df, n = 20, page = 1) {
     head(n * page + n) %>% 
     tail(n + n)
   
+  encountered.names <- c()
+  duplicate.names <- c()
+  remove.indices <- c()
+  
+  # If a duplicate name is found, keep the first one because it is highest-scoring
+  for(i in 1:nrow(df)) {
+    row <- df[i,]
+    name <- as.character(row$name)
+    
+    if(!name %in% encountered.names) {
+      encountered.names <- c(name, encountered.names)
+    }
+    else {
+      remove.indices <- c(i, remove.indices)
+      duplicate.names <- c(name, duplicate.names)
+    }
+  }
+  
   df %>% 
-    group_by(name) %>%
-    summarize(n = n()) %>% 
-    mutate(duplicated = n > 1,
-           count = mean(count),
-           score = mean(score),
-           trendiness.score = mean(trendiness.score),
-           classic.score = mean(classic.score)
-           )
+    # We want to sum the counts to be accurate
+    group_by(name) %>% 
+    summarize(count = sum(count)) %>% 
+    as.data.frame() %>% 
+    left_join(df, by = 'name') %>% 
+    
+    # Keep count.x
+    select(-count.y) %>% 
+    rename(count = count.x) %>% 
+    
+    # Remove duplicates
+    mutate(index = row_number()) %>% 
+    filter(!index %in% remove.indices) %>% 
+    select(-index) %>% 
+    mutate(gender = ifelse(name %in% duplicate.names, 'A', as.character(gender)))
 }
-
-FindNames(vowel.factor = 1,
-          double.letters.factor = -1,
-          common.factor = 2,
-          androgynity.factor = 100)
 
 #' Find names matching preferences according to priority. Positive priorities
 #' are prioritized, negative priorities are diminished, zero priorities are
@@ -162,16 +186,12 @@ FindNames <- function(vowel.factor = 0,
              GetScore(classic.score.perc, classic.factor) +
              GetScore(function() { ifelse(ends.in.vowel, 1, 0) }, vowel.ending.factor) +
              GetScore(doubleness.perc, double.letters.factor)) %>% 
-    FixDuplicates(n, page) %>% 
+    arrange(-score) %>% 
+    MergeGenderedDuplicates(n, page) %>% 
     arrange(-score) %>% 
     head(n * page) %>% 
     tail(n)
 }
-
-FindNames(vowel.factor = 1,
-          double.letters.factor = -1,
-          common.factor = 2,
-          androgynity.factor = 100)
 
 # Which name do you find more attractive?
 # or
