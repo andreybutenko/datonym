@@ -32,14 +32,14 @@ function(res, name_) {
   
   list(
     stats = GetNameStats(name),
-    
+
     trends = list(
-      male = trend.df %>% 
+      male = trend.df %>%
         filter(gender == 'M') %>%
         select(-name, -gender),
-      
-      female = trend.df %>% 
-        filter(gender == 'F') %>% 
+
+      female = trend.df %>%
+        filter(gender == 'F') %>%
         select(-name, -gender)
     )
   )

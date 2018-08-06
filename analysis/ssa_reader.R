@@ -16,12 +16,12 @@
 library(dplyr)
 library(stringr)
 
-files <- list.files('../ssa_names/', pattern = '.txt')
+files <- list.files('./ssa_names/', pattern = '.txt')
 
 # Given the file name of a SSA dataset, extracts its contents into a dataframe,
 # parses the year out of the file name, and adds it as a column.
 GetYearData <- function(file.name) {
-  year.data <- read.csv(paste0('../ssa_names/', file.name), stringsAsFactors = F, header = F)
+  year.data <- read.csv(paste0('./ssa_names/', file.name), stringsAsFactors = F, header = F)
   colnames(year.data) <- c('name', 'gender', 'count')
   year.data$year = str_extract(file.name, "[0-9]+")
   return(year.data)
@@ -33,7 +33,9 @@ for(file in files) {
   names.years <- rbind(names.years, GetYearData(file))
 }
 
-write.csv(names.years, '../ssa_names/ssa_names_years.csv', row.names = F)
+names.years %>% 
+  mutate(name = tolower(name)) %>% 
+  write.csv('./ssa_names/ssa_names_years.csv', row.names = F)
 
 # Sums counts for each name/gender pair to create ssa_names.csv
 names <- names.years %>% 
