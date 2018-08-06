@@ -5,7 +5,11 @@ source('./api/exploration/common.R')
 source('./api/exploration/find_names.R')
 source('./api/exploration/name_stats.R')
 
-# Emit an error with given status code and msg
+#' Emit an error with given status code and msg
+#' 
+#' @param res Result object from Plumber.
+#' @param status Status code.
+#' @param msg Message to send to client.
 EmitError <- function(res, status, msg) {
   res$status <- status
   list(error = jsonlite::unbox(msg)) %>% 

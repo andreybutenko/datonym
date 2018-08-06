@@ -5,7 +5,9 @@ names.analy <- read.csv('./data/names4.csv') # used for FindNames
 name.trends <- read.csv('./ssa_names/ssa_names_years.csv') # used for trends
 stats.cache <- read.csv('./data/cache/stats.csv') # used for stats
 
-# For a given name_, returns whether or not it exists in dataset.
+#' For a given name_, returns whether or not it exists in dataset.
+#' 
+#' @param name_ Name to check for.
 NameExists <- function(name_) {
   stats.cache %>% 
     filter(name == name_) %>%
