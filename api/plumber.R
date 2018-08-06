@@ -35,14 +35,12 @@ function(res, name_) {
     
     trends = list(
       male = trend.df %>% 
-        filter(gender == 'M') %>% 
-        FixChronological(min.year = min(trend.df$year),
-                         max.year = max(trend.df$year)),
+        filter(gender == 'M') %>%
+        select(-name, -gender),
       
       female = trend.df %>% 
         filter(gender == 'F') %>% 
-        FixChronological(min.year = min(trend.df$year),
-                         max.year = max(trend.df$year))
+        select(-name, -gender)
     )
   )
   
