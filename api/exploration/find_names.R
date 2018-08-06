@@ -1,4 +1,3 @@
-
 #' Find names matching preferences according to priority. Positive priorities
 #' are prioritized, negative priorities are diminished, zero priorities are
 #' not considered.
@@ -26,8 +25,9 @@ FindNames <- function(vowel.factor = 0,
                       vowel.ending.factor = 0,
                       double.letters.factor = 0,
                       count.cutoff = 0,
-                      n = 20,
+                      n = 30,
                       page = 1) {
+  
   names.analy %>%
     filter(count > count.cutoff) %>% 
     mutate(score =
@@ -40,12 +40,16 @@ FindNames <- function(vowel.factor = 0,
              GetScore(count.perc, common.factor) +
              GetScore(classic.score.perc, classic.factor) +
              GetScore(function() { ifelse(ends.in.vowel, 1, 0) }, vowel.ending.factor) +
-             GetScore(doubleness.perc, double.letters.factor)) %>% 
-    arrange(-score) %>% 
-    MergeGenderedDuplicates(n, page) %>% 
-    arrange(-score) %>% 
-    head(n * page) %>% 
-    tail(n)
+             GetScore(doubleness.perc, double.letters.factor)) %>%
+    arrange(-score) %>%
+    GetPage(n, page) %>% 
+    group_by(name) %>%
+    summarize(count = sum(count),
+              gender = ifelse(n() == 1, as.character(gender), 'A'),
+              score = max(score)) %>%
+    ungroup() %>%
+    select(name, gender, score) %>%
+    as.data.frame()
 }
 
 #' Score names with a particular column as parameter.
@@ -54,7 +58,7 @@ FindNames <- function(vowel.factor = 0,
 #' @param factor The significance of this score, where greater absolute values
 #'  are more significant.
 GetScore <- function(column, factor = 0) {
-  if(factor == 0) {
+  if(factor == 0 || is.na(factor)) {
     return(0)
   }
   

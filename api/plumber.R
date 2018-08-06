@@ -14,7 +14,6 @@ EmitError <- function(res, status, msg) {
 
 #' Return data on name.
 #' 
-#' 
 #' @param name The name
 #' @get /name/<name_>
 function(res, name_) {
@@ -48,29 +47,41 @@ function(res, name_) {
   
 }
 
-#' Return information on popularity of name over time.
-#' @param name The name
-#' @get /trend
-function(res, name) {
-  if(missing(name)) {
-    return(EmitError(res, 400, 'Requests to /trend must include ?name parameter'))
-  }
+#' Return list of names matching preferences. See \link{FindNames} documentation
+#' for information on parameters.
+#' 
+#' @get /find
+function(res,
+         vowel_factor = 0,
+         syllable_factor = 0,
+         symmetry_factor = 0,
+         masculine_factor = 0,
+         androgynity_factor = 0,
+         trendy_factor = 0,
+         common_factor = 0,
+         classic_factor = 0,
+         vowel_ending_factor = 0,
+         double_letters_factor = 0) {
   
-  if(!NameExists(name)) {
-    return(EmitError(res, 404, paste0('No entries with name "', name, '" found')))
-  }
+  vowel.factor <- as.numeric(vowel_factor)
+  syllable.factor <- as.numeric(syllable_factor)
+  symmetry.factor <- as.numeric(symmetry_factor)
+  masculine.factor <- as.numeric(masculine_factor)
+  androgynity.factor <- as.numeric(androgynity_factor)
+  trendy.factor <- as.numeric(trendy_factor)
+  common.factor <- as.numeric(common_factor)
+  classic.factor <- as.numeric(classic_factor)
+  vowel.ending.factor <- as.numeric(vowel_ending_factor)
+  double.letters.factor <- as.numeric(double_letters_factor)
   
-  trend.df <- GetNameTrend(name)
-  
-  list(
-    male = trend.df %>% 
-      filter(gender == 'M') %>% 
-      FixChronological(min.year = min(trend.df$year),
-                       max.year = max(trend.df$year)),
-    
-    female = trend.df %>% 
-      filter(gender == 'F') %>% 
-      FixChronological(min.year = min(trend.df$year),
-                       max.year = max(trend.df$year))
-  )
+  FindNames(vowel.factor = vowel.factor,
+            syllable.factor = syllable.factor,
+            symmetry.factor = symmetry.factor,
+            masculine.factor = masculine.factor,
+            androgynity.factor = androgynity.factor,
+            trendy.factor = trendy.factor,
+            common.factor = common.factor,
+            classic.factor = classic.factor,
+            vowel.ending.factor = vowel.ending.factor,
+            double.letters.factor = double.letters.factor)
 }
