@@ -47,4 +47,6 @@ stats.df <- bind_rows(stats.list)
 
 # Clean up
 stopCluster(cluster)
-write.csv(stats.df, './data/cache/stats.csv', row.names = F)
+stats.df %>% 
+  mutate(name = tolower(name)) %>% 
+  write.csv('./data/cache/stats.csv', row.names = F)

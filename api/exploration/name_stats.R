@@ -7,9 +7,8 @@ GetNameStats <- function(name_) {
 }
 
 # For a given name_, returns a dataframe containing how many people having that
-# name are born each year. name_ is case-insensitive.
+# name are born each year.
 GetNameTrend <- function(name_) {
-  name_ <- tolower(name_)
   name.trends %>%
     filter(name == name_) %>%
     arrange(year)

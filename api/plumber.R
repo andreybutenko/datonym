@@ -24,6 +24,8 @@ function(res, name_) {
     return(EmitError(res, 400, 'Requests to /trend must include ?name parameter'))
   }
   
+  name <- tolower(name)
+  
   if(!NameExists(name)) {
     return(EmitError(res, 404, paste0('No entries with name "', name, '" found')))
   }
