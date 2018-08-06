@@ -3,8 +3,9 @@ library(ggplot2)
 
 names.analy <- read.csv('./data/names4.csv')
 name.trends <- read.csv('./ssa_names/ssa_names_years.csv')
+stats.cache <- read.csv('./data/cache/stats.csv')
 
-# For a given name_,  returns whether or not it exists in dataset.
+# For a given name_, returns whether or not it exists in dataset.
 NameExists <- function(name_) {
   names.analy %>% 
     filter(tolower(name) == tolower(name_)) %>%
