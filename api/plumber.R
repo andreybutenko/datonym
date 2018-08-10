@@ -5,6 +5,12 @@ source('./api/exploration/common.R')
 source('./api/exploration/find_names.R')
 source('./api/exploration/name_stats.R')
 
+#' @filter cors
+function(res) {
+  res$setHeader('Access-Control-Allow-Origin', '*') # Or whatever
+  plumber::forward()
+}
+
 #' Emit an error with given status code and msg
 #' 
 #' @param res Result object from Plumber.
